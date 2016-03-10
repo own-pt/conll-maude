@@ -2,11 +2,9 @@
 
 (in-package #:conll-maude)
 
-(defun make-id (context sentence token)
-  (format nil "id('f~a-s~a-t~a)"
-          (cl-ppcre:regex-replace-all "[^A-Za-z0-9-]" (string-downcase (string-trim '(#\- #\. #\, #\; #\` #\' #\space) context)) "-")
-          sentence
-          token))
+(defun make-id (context prefix id)
+  (format nil "id('f~a-~a~a)"
+          (cl-ppcre:regex-replace-all "[^A-Za-z0-9-]" (string-downcase (string-trim '(#\- #\. #\, #\; #\` #\' #\space) context)) "-") prefix id))
 
 (defun clean-dep-rel (str)
   (cl-ppcre:regex-replace-all "[^A-Za-z0-9-]" (string-downcase (string-trim '(#\- #\. #\, #\; #\` #\' #\space) str)) "-"))
@@ -42,14 +40,15 @@
 
 (defun convert-line (context sentence line)
   (destructuring-bind (word-index token lemma pos ner head dep-rel) line
-    (let ((word-index-id (make-id context sentence word-index))
-          (head-id (make-id context sentence head)))
-      (emit-maude "idx" (format nil "index(~a,~a)" word-index-id word-index))
-      (emit-maude "token" (format nil "token(~a,~a)" word-index-id (maude-string token nil)))
-      (emit-maude "lemma" (format nil "lemma(~a,~a)" word-index-id (maude-string lemma)))
-      (emit-maude "pos" (format nil "pos(~a,~a)" word-index-id (maude-qid pos)))
-      (emit-maude "ner" (format nil "ner(~a,~a)" word-index-id (maude-qid ner)))
-      (emit-maude dep-rel (format nil "dependency('~a,~a,~a)" (clean-dep-rel dep-rel) word-index-id head-id)))))
+    (let ((word-index-id (make-id context "i" word-index))
+          (sentence-id (make-id context "s" sentence))
+          (head-id (make-id context "i" head)))
+      (emit-maude "idx" (format nil "index(~a,~a,~a)" sentence-id word-index-id word-index))
+      (emit-maude "token" (format nil "token(~a,~a,~a)" sentence-id word-index-id (maude-string token nil)))
+      (emit-maude "lemma" (format nil "lemma(~a,~a,~a)" sentence-id word-index-id (maude-string lemma)))
+      (emit-maude "pos" (format nil "pos(~a,~a,~a)" sentence-id word-index-id (maude-qid pos)))
+      (emit-maude "ner" (format nil "ner(~a,~a,~a)" sentence-id word-index-id (maude-qid ner)))
+      (emit-maude dep-rel (format nil "dependency('~a,~a,~a,~a)" (clean-dep-rel dep-rel) sentence-id word-index-id head-id)))))
 
 (defun is-comment (line)
   (starts-with-subseq "#" line))
