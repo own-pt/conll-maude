@@ -95,4 +95,4 @@
   (with-open-file (fout filename-out :direction :output :if-exists :supersede)
     (write-maude fout (pathname-name filename-in))))
 
-;; (convert-filename "sample" "/home/fcbr/repos/conll-maude/complex.conll" "complex.pl")
+;; (convert-filename "sample" "complex.conll" "complex.pl")
