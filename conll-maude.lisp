@@ -52,16 +52,29 @@
 (defun maude-string (str &optional (downcase t))
   (format nil "\"~a\"" (cl-ppcre:regex-replace-all "[^A-Za-z0-9]" (if downcase (string-downcase str) str) "-")))
 
+;; . ID: Word index, integer starting at 1 for each new sentence; may be a range for multiword tokens; may be a decimal number for empty nodes.
+;; . FORM: Word form or punctuation symbol.
+;; . LEMMA: Lemma or stem of word form.
+;; . UPOSTAG: Universal part-of-speech tag.
+;; . XPOSTAG: Language-specific part-of-speech tag; underscore if not available.
+;; . FEATS: List of morphological features from the universal feature inventory or from a defined language-specific extension; underscore if not available.
+;; . HEAD: Head of the current word, which is either a value of ID or zero (0).
+;; . DEPREL: Universal dependency relation to the HEAD (root iff HEAD = 0) or a defined language-specific subtype of one.
+;; . DEPS: Enhanced dependency graph in the form of a list of head-deprel pairs.
+;; . MISC: Any other annotation.
+
 (defun convert-line (context sentence line)
-  (destructuring-bind (word-index token lemma pos ner head dep-rel) line
+  (destructuring-bind (word-index token lemma upos xpos feats head dep-rel deps misc) line
     (let ((word-index-id (make-id context "i" word-index))
           (sentence-id (make-id context "s" sentence))
           (head-id (make-id context "i" head)))
       (emit-maude "idx" (format nil "index(~a,~a,~a)" sentence-id word-index-id word-index))
       (emit-maude "token" (format nil "token(~a,~a,~a)" sentence-id word-index-id (maude-string token nil)))
       (emit-maude "lemma" (format nil "lemma(~a,~a,~a)" sentence-id word-index-id (maude-string lemma)))
-      (emit-maude "pos" (format nil "pos(~a,~a,~a)" sentence-id word-index-id (maude-qid pos)))
-      (emit-maude "ner" (format nil "ner(~a,~a,~a)" sentence-id word-index-id (maude-qid ner)))
+      (emit-maude "upos" (format nil "upos(~a,~a,~a)" sentence-id word-index-id (maude-qid upos)))
+      (emit-maude "xpos" (format nil "xpos(~a,~a,~a)" sentence-id word-index-id (maude-qid xpos)))
+      (emit-maude "deps" (format nil "xpos(~a,~a,~a)" sentence-id word-index-id (maude-qid deps)))
+      (emit-maude "misc" (format nil "xpos(~a,~a,~a)" sentence-id word-index-id (maude-qid misc)))
       (emit-maude dep-rel (format nil "dependency('~a,~a,~a,~a)" (clean-dep-rel dep-rel) sentence-id word-index-id head-id)))))
 
 (defun is-comment (line)
